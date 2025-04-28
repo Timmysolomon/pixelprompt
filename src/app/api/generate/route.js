@@ -8,14 +8,14 @@ export async function POST(request) {
     const predictionResponse = await axios.post(
       'https://api.replicate.com/v1/predictions',
       {
-        version: 'ac732df83cea7fff18b8472768c88ad041fa750ff7682a21affe81863cbe77e4',
+        version: 'ac732df83cea7fff18b8472768c88ad041fa750ff7682a21affe81863cbe77e4', // Corrected model version
         input: {
           prompt: prompt,
         },
       },
       {
         headers: {
-          Authorization: `Token ${process.env.REPLICATE_API_TOKEN}`,
+          Authorization: `Token ${process.env.NEXT_PUBLIC_REPLICATE_API_TOKEN}`,
           'Content-Type': 'application/json',
         },
       }
