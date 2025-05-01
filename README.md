@@ -34,3 +34,5 @@ Clone the project:
 ```bash
 git clone https://github.com/Timmysolomon/pixelprompt.git
 cd pixelprompt
+
+<!-- Trigger redeploy -->
