@@ -1,17 +1,23 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
 
+const modelMap = {
+  pixel: 'ac732df83cea7fff18b8472768c88ad041fa750ff7682a21affe81863cbe77e4',
+  spritesheet: 'replace_with_sprite_model_version_hash',
+  concept: 'replace_with_concept_model_version_hash',
+};
+
 export async function POST(request) {
-  const { prompt } = await request.json();
+  const { prompt, version } = await request.json();
 
   try {
     const predictionInit = await axios.post(
       'https://api.replicate.com/v1/predictions',
       {
-        version: 'ac732df83cea7fff18b8472768c88ad041fa750ff7682a21affe81863cbe77e4',
+        version,
         input: {
           prompt,
-          num_outputs: 1,
+          num_outputs: 4,
           guidance_scale: 7,
           num_inference_steps: 25,
         },
@@ -25,12 +31,11 @@ export async function POST(request) {
     );
 
     const prediction = predictionInit.data;
-
-    // Now poll the status endpoint until it completes
     let output = null;
-    let attempts = 0;
+    const timeoutMs = 15000;
+    const start = Date.now();
 
-    while (attempts < 10) {
+    while (Date.now() - start < timeoutMs) {
       const statusRes = await axios.get(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
         headers: {
           Authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}`,
@@ -46,9 +51,7 @@ export async function POST(request) {
         throw new Error('Prediction failed.');
       }
 
-      // Wait 1.5 seconds between checks
       await new Promise((res) => setTimeout(res, 1500));
-      attempts++;
     }
 
     if (!output) {
