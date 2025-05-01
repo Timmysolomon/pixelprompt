@@ -12,7 +12,8 @@ export default function GeneratorPage() {
     setLoading(true);
     try {
       const res = await axios.post('/api/generate', { prompt: input });
-      setImage(res.data?.image || '');
+      console.log('API response:', res.data);
+      setImage(res.data?.output?.[0] || '');
     } catch (err) {
       console.error('Error generating image:', err);
     }
