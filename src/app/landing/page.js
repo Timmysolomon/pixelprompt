@@ -24,4 +24,5 @@ export const metadata = {
   },
 };
 
-export { default } from './landingPage';
+export { default } from './Landingpage';
+
