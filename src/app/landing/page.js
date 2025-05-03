@@ -1,29 +1,27 @@
-'use client';
+export const metadata = {
+  title: 'PixelPrompt - AI Pixel Art Generator',
+  description: 'Create professional pixel art characters, spritesheets, and game assets instantly using AI.',
+  openGraph: {
+    title: 'PixelPrompt - AI Pixel Art Generator',
+    description: 'Create pixel-perfect game assets with AI.',
+    url: 'https://yourdomain.com',
+    siteName: 'PixelPrompt',
+    images: [
+      {
+        url: '/images/og-image.png',
+        width: 1200,
+        height: 630,
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'PixelPrompt',
+    description: 'Instant AI pixel art generator for indie developers.',
+    images: ['/images/og-image.png'],
+  },
+};
 
-import { useRouter } from 'next/navigation';
-
-export default function LandingHero() {
-  const router = useRouter();
-
-  const handleEnter = () => {
-    router.push('/generator'); // <-- FIXED: now it goes to /generator
-  };
-
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center text-center p-8">
-      <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold animate-glow text-[#6366f1] mb-6">
-        Welcome to PixelPrompt
-      </h1>
-      <p className="text-gray-400 mb-8 max-w-2xl">
-        Instantly generate beautiful pixel art characters, environments, and UI elements for your indie games. 
-        Powered by AI. Lightning fast. Professional quality.
-      </p>
-      <button
-        onClick={handleEnter}
-        className="px-8 py-4 bg-[#6366f1] text-white font-semibold rounded-lg hover:bg-[#4338CA] transition text-lg"
-      >
-        Enter PixelPrompt →
-      </button>
-    </main>
-  );
-}
+export { default } from './landingPage';

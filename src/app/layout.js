@@ -1,5 +1,6 @@
 import './globals.css';
 import { Space_Grotesk } from 'next/font/google';
+import SessionWrapper from '@/components/SessionWrapper';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
@@ -12,7 +13,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={spaceGrotesk.className}>
-        {children}
+        <SessionWrapper>
+          {children}
+        </SessionWrapper>
       </body>
     </html>
   );

@@ -1,6 +1,8 @@
 'use client';
-import { useState } from 'react';
-import axios from 'axios';
+
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import Header from '@/components/Header';
 
 const models = {
   pixel: {
@@ -24,135 +26,140 @@ const models = {
 };
 
 export default function GeneratorPage() {
+  const { data: session } = useSession();
   const [input, setInput] = useState('');
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState('pixel');
-  const [showModelSelector, setShowModelSelector] = useState(false);
+  const [error, setError] = useState('');
+  const [plan, setPlan] = useState('free');
+  const [usageToday, setUsageToday] = useState(0);
+  const [activeImage, setActiveImage] = useState(null);
+
+  useEffect(() => {
+    if (session?.user?.email) {
+      fetch(`/api/user-plan?email=${session.user.email}`)
+        .then((res) => res.json())
+        .then((data) => data.status && setPlan(data.status));
+
+      fetch(`/api/usage?email=${session.user.email}`)
+        .then((res) => res.json())
+        .then((data) => setUsageToday(data.usage || 0));
+    }
+  }, [session]);
 
   const handleGenerate = async () => {
+    if (!session) return setError('Please log in to generate images.');
     if (!input.trim()) return;
+    if (plan === 'free' && usageToday >= 10)
+      return setError('Free plan limit reached. Upgrade to continue.');
+
     setLoading(true);
     setImages([]);
+    setError('');
+
     try {
-      const res = await axios.post('/api/generate', {
-        prompt: input,
-        model: selectedModel,
-        version: models[selectedModel].version,
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-email': session.user.email,
+        },
+        body: JSON.stringify({
+          prompt: input,
+          model: selectedModel,
+          version: models[selectedModel].version,
+        }),
       });
-      setImages(res.data?.output || []);
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      setImages(data.output || []);
+      setUsageToday((prev) => prev + 1);
     } catch (err) {
-      console.error('Error generating image:', err);
+      setError(err.message || 'Something went wrong.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col justify-center items-center px-4 py-10">
-      <div className="max-w-xl w-full text-center space-y-6">
-        <h1 className="text-3xl md:text-5xl font-bold text-purple-400 drop-shadow-lg animate-glow">
-          PixelPrompt Generator
-        </h1>
-        <p className="text-gray-300 text-lg md:text-xl">
-          Describe your game asset or scene, and generate AI-powered pixel art.
-        </p>
+    <div className="min-h-screen bg-black text-white p-6 flex flex-col items-center">
+      <Header />
+      <div className="max-w-2xl w-full text-center mt-10 space-y-6">
+        <h1 className="text-4xl font-bold text-purple-400 drop-shadow animate-glow">PixelPrompt Generator</h1>
+        <p className="text-gray-400 text-lg">Plan: <span className="capitalize text-purple-300">{plan}</span></p>
+        {plan !== 'creator' && (
+          <p className="text-sm text-gray-500">{usageToday} of {plan === 'free' ? 10 : 200} used today</p>
+        )}
+        <p className="text-gray-300">Describe your character, item, or environment, and get pixel-perfect AI images.</p>
 
-        {/* Mobile Toggle */}
-        <div className="w-full sm:hidden mb-4">
-          <button
-            onClick={() => setShowModelSelector(!showModelSelector)}
-            className="w-full px-4 py-2 bg-zinc-800 border border-gray-700 text-white rounded-md flex justify-between items-center"
-          >
-            <span>{models[selectedModel].label}</span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className={`h-5 w-5 transition-transform ${showModelSelector ? 'rotate-180' : ''}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Model Selector */}
-        <div className={`w-full ${!showModelSelector && 'hidden'} sm:block`}>
-          <div className="space-y-2">
-            {Object.entries(models).map(([key, { label, description, thumbnail }]) => (
-              <div
-                key={key}
-                onClick={() => {
-                  setSelectedModel(key);
-                  setShowModelSelector(false);
-                }}
-                className={`flex items-center p-3 rounded-md cursor-pointer border ${
-                  selectedModel === key
-                    ? 'border-purple-500 bg-zinc-800'
-                    : 'border-gray-700 bg-zinc-900'
-                } hover:border-purple-400 transition`}
-              >
-                {thumbnail && (
-                  <img
-                    src={thumbnail}
-                    alt={`${label} thumbnail`}
-                    className="w-12 h-12 rounded-md mr-3 object-cover"
-                  />
-                )}
-                <div>
-                  <h4 className="text-white font-medium">{label}</h4>
-                  <p className="text-gray-400 text-sm">{description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="bg-zinc-800 p-4 rounded border border-purple-500 text-sm text-left">
+          <p className="font-semibold">Prompt ideas:</p>
+          <ul className="list-disc ml-5 mt-2 space-y-1 text-gray-400">
+            <li>"Cyberpunk warrior with neon sword"</li>
+            <li>"Haunted forest with glowing eyes"</li>
+            <li>"Pixel UI button pack for mobile game"</li>
+          </ul>
         </div>
 
         <input
-          type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Describe your character, scene, or object"
-          className="w-full px-4 py-3 rounded-md bg-zinc-900 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          placeholder="Describe your prompt here..."
+          className="w-full px-4 py-3 bg-zinc-900 border border-gray-700 rounded text-white placeholder-gray-400"
         />
 
         <button
           onClick={handleGenerate}
           disabled={loading}
-          className={`bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-md text-white font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed`}
+          className="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded text-white font-semibold transition disabled:opacity-50"
         >
-          {loading ? (
-            <span className="flex items-center justify-center space-x-2">
-              <span className="animate-pulse">Generating</span>
-              <span className="animate-bounce">.</span>
-              <span className="animate-bounce delay-100">.</span>
-              <span className="animate-bounce delay-200">.</span>
-            </span>
-          ) : (
-            'Generate'
-          )}
+          {loading ? 'Generating...' : 'Generate'}
         </button>
 
+        {error && (
+          <div className="text-red-500">
+            <p>{error}</p>
+            <button onClick={handleGenerate} className="text-blue-400 mt-2 underline">Retry</button>
+          </div>
+        )}
+
         {images.length > 0 && (
-          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {images.map((imgUrl, idx) => (
-              <div key={idx} className="flex flex-col items-center space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-8">
+            {images.map((img, idx) => (
+              <div key={idx} className="relative group">
                 <img
-                  src={imgUrl}
-                  alt={`Generated ${idx + 1}`}
-                  className="w-full rounded-md border border-gray-700 shadow-md"
+                  src={img}
+                  alt={`Generated ${idx}`}
+                  className="rounded shadow-md border border-gray-700 cursor-pointer"
+                  onClick={() => setActiveImage(img)}
+                  onContextMenu={(e) => {
+                    e.stopPropagation(); // allow browser download menu
+                  }}
                 />
-                <a
-                  href={imgUrl}
-                  download={`pixelprompt-image-${idx + 1}.png`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-4 py-2 bg-purple-600 text-white rounded-md text-sm hover:bg-purple-700 transition"
-                >
-                  Download
-                </a>
+                {plan === 'creator' ? (
+                  <a
+                    href={img}
+                    download
+                    className="absolute top-2 right-2 bg-purple-600 text-white text-xs px-2 py-1 rounded hover:bg-purple-700"
+                  >
+                    Download
+                  </a>
+                ) : (
+                  <div className="absolute top-2 right-2 text-gray-500 text-xs bg-black/60 px-2 py-1 rounded">
+                    Creator plan required
+                  </div>
+                )}
               </div>
             ))}
+          </div>
+        )}
+
+        {activeImage && (
+          <div className="fixed inset-0 bg-black bg-opacity-90 flex justify-center items-center z-50" onClick={() => setActiveImage(null)}>
+            <img src={activeImage} alt="Expanded" className="max-w-[90%] max-h-[90%] rounded shadow-xl" />
           </div>
         )}
       </div>
