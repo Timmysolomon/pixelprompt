@@ -97,11 +97,11 @@ export default function GeneratorPage() {
 
         <div className="bg-zinc-800 p-4 rounded border border-purple-500 text-sm text-left">
           <p className="font-semibold">Prompt ideas:</p>
-          <ul className="list-disc ml-5 mt-2 space-y-1 text-gray-400">
-            <li>"Cyberpunk warrior with neon sword"</li>
-            <li>"Haunted forest with glowing eyes"</li>
-            <li>"Pixel UI button pack for mobile game"</li>
-          </ul>
+          <ul className="list-disc list-inside space-y-1">
+             <li>&quot;A wizard casting a fireball in a dungeon&quot;</li>
+             <li>&quot;Pixel art of a haunted house at night&quot;</li>
+             <li>&quot;Futuristic HUD interface in pixel style&quot;</li>
+            </ul>
         </div>
 
         <input
