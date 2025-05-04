@@ -15,12 +15,11 @@ export async function POST(req) {
 
   const email = session;
   const today = new Date();
-  today.setHours(0, 0, 0, 0);  // Set to start of day
+  today.setHours(0, 0, 0, 0);
 
   const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
   try {
-    // Get user plan
     const { data: user, error: userErr } = await supabase
       .from('users')
       .select('stripe_subscription_status')
@@ -28,28 +27,24 @@ export async function POST(req) {
       .single();
 
     if (userErr) throw userErr;
-
     const plan = user?.stripe_subscription_status || 'free';
 
-    // Check daily usage for today
-    const { count: dailyCount, error: dailyCountErr } = await supabase
+    const { count: dailyCount, error: dailyErr } = await supabase
       .from('generations')
       .select('*', { count: 'exact', head: true })
       .eq('email', email)
       .gte('created_at', today.toISOString());
 
-    if (dailyCountErr) throw dailyCountErr;
+    if (dailyErr) throw dailyErr;
 
-    // Check monthly usage
-    const { count: monthlyCount, error: monthlyCountErr } = await supabase
+    const { count: monthlyCount, error: monthlyErr } = await supabase
       .from('generations')
       .select('*', { count: 'exact', head: true })
       .eq('email', email)
       .gte('created_at', firstOfMonth.toISOString());
 
-    if (monthlyCountErr) throw monthlyCountErr;
+    if (monthlyErr) throw monthlyErr;
 
-    // Check if user exceeds daily or monthly limits
     if (plan === 'free' && dailyCount >= 10) {
       return NextResponse.json({ error: 'Daily limit reached for Free plan' }, { status: 403 });
     }
@@ -58,10 +53,18 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Monthly limit reached for Starter plan' }, { status: 403 });
     }
 
-    // Generate image via Replicate API
-    const output = await replicate.run(`stability-ai/sdxl:${version}`, { input: { prompt } });
+    // Replicate API call
+    const output = await replicate.run(`${model}:${version}`, {
+      input: { prompt },
+    });
 
-    // Log generation to Supabase
+    console.log('Replicate output:', output); // Debug log
+
+    if (!output || !Array.isArray(output)) {
+      return NextResponse.json({ error: 'Image generation failed' }, { status: 500 });
+    }
+
+    // Save generation
     await supabase.from('generations').insert([{ email }]);
 
     return NextResponse.json({ output });

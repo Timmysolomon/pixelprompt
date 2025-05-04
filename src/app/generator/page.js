@@ -9,18 +9,21 @@ const models = {
     label: 'Pixel Art',
     description: 'Classic 2D pixel art for characters or scenes.',
     thumbnail: '/thumbnails/pixel.png',
+    model: 'stability-ai/sdxl',
     version: 'ac732df83cea7fff18b8472768c88ad041fa750ff7682a21affe81863cbe77e4',
   },
   spritesheet: {
     label: '3D Sprite Sheet',
     description: 'Top-down 3D game sprites with vibrant colors.',
     thumbnail: '/thumbnails/spritesheet.png',
+    model: 'your-spritesheet-model-name',
     version: 'replace_with_sprite_model_version_hash',
   },
   concept: {
     label: 'Character Concept',
     description: 'High-res concept art of fantasy or sci-fi characters.',
     thumbnail: '/thumbnails/concept.png',
+    model: 'your-concept-model-name',
     version: 'replace_with_concept_model_version_hash',
   },
 };
@@ -67,7 +70,7 @@ export default function GeneratorPage() {
         },
         body: JSON.stringify({
           prompt: input,
-          model: selectedModel,
+          model: models[selectedModel].model,
           version: models[selectedModel].version,
         }),
       });
@@ -98,10 +101,10 @@ export default function GeneratorPage() {
         <div className="bg-zinc-800 p-4 rounded border border-purple-500 text-sm text-left">
           <p className="font-semibold">Prompt ideas:</p>
           <ul className="list-disc list-inside space-y-1">
-             <li>&quot;A wizard casting a fireball in a dungeon&quot;</li>
-             <li>&quot;Pixel art of a haunted house at night&quot;</li>
-             <li>&quot;Futuristic HUD interface in pixel style&quot;</li>
-            </ul>
+            <li>&quot;A wizard casting a fireball in a dungeon&quot;</li>
+            <li>&quot;Pixel art of a haunted house at night&quot;</li>
+            <li>&quot;Futuristic HUD interface in pixel style&quot;</li>
+          </ul>
         </div>
 
         <input
@@ -135,9 +138,7 @@ export default function GeneratorPage() {
                   alt={`Generated ${idx}`}
                   className="rounded shadow-md border border-gray-700 cursor-pointer"
                   onClick={() => setActiveImage(img)}
-                  onContextMenu={(e) => {
-                    e.stopPropagation(); // allow browser download menu
-                  }}
+                  onContextMenu={(e) => e.stopPropagation()}
                 />
                 {plan === 'creator' ? (
                   <a
